@@ -63,7 +63,9 @@ public class BlockchainServiceImpl implements BlockchainService {
                 throw new IllegalArgumentException("SHA-256 hash must be 32 bytes");
             }
 
-            /* ================================
+            /* ==========
+            
+            ======================
                2️⃣ Build Solidity function call
                function register(bytes32)
                ================================ */
