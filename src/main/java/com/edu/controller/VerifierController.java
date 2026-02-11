@@ -20,19 +20,16 @@ public class VerifierController {
     @Autowired
     private DocumentService documentService;
 
-    // 1️⃣ View pending documents
     @GetMapping("/pending")
     public List<com.edu.entity.Document> pending() {
         return documentService.getPendingForVerification();
     }
 
-    // 2️⃣ Approve document
     @PostMapping("/approve/{id}")
     public void approve(@PathVariable UUID id) {
         documentService.approve(id);
     }
 
-    // 3️⃣ Reject document
     @PostMapping("/reject/{id}")
     public void reject(@PathVariable UUID id) {
         documentService.reject(id);
