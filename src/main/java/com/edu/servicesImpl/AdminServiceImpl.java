@@ -1,7 +1,11 @@
 package com.edu.servicesImpl;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
+import com.edu.dto.UserDTO;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,15 +27,18 @@ public class AdminServiceImpl implements AdminService {
 
     private final UserRepository userRepo;
     private final VerifierProfileRepository verifierRepo;
+    private final com.edu.repositories.EmployerConsentRepository employerConsentRepo;
     private final PasswordEncoder passwordEncoder;
     @Autowired
     private AuditService auditService;
 
     public AdminServiceImpl(UserRepository userRepo,
                             VerifierProfileRepository verifierRepo,
+                            com.edu.repositories.EmployerConsentRepository employerConsentRepo,
                             PasswordEncoder passwordEncoder) {
         this.userRepo = userRepo;
         this.verifierRepo = verifierRepo;
+        this.employerConsentRepo = employerConsentRepo;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -70,6 +77,27 @@ public class AdminServiceImpl implements AdminService {
         verifierRepo.save(profile);
 
         return verifier;
+    }
+
+    @Override
+    public List<UserDTO> getAllUsers() {
+        return userRepo.findAll().stream()
+                .map(user -> new UserDTO(
+                        user.getId(),
+                        user.getUsername(),
+                        user.getRole().name(),
+                        user.getStatus() == User.Status.ACTIVE
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public com.edu.dto.AdminSummaryDTO getAdminSummary() {
+        long totalUsers = userRepo.count();
+        long verifiers = userRepo.countByRole(User.Role.VERIFIER);
+        long activeConsents = employerConsentRepo.countByStatus(com.edu.entity.EmployerConsent.Status.APPROVED);
+
+        return new com.edu.dto.AdminSummaryDTO(totalUsers, verifiers, activeConsents);
     }
 
     @Override

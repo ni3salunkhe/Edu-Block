@@ -16,7 +16,8 @@ public interface DocumentService {
 	void reject(UUID documentId);
 	void assertCanAccess(Document document);
 	Document getDocumentById(UUID documentId);
-	FileSystemResource downloadDocument(UUID documentId);
-	List<Document> getMyDocuments();
+	List<com.edu.dto.DocumentDTO> getMyDocuments();
+	
+	List<com.edu.dto.DocumentDTO> getDocumentsByConsent(UUID consentId, UUID employerId);
 
 }

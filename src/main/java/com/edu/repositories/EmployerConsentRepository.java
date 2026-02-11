@@ -18,4 +18,12 @@ public interface EmployerConsentRepository extends JpaRepository<EmployerConsent
 			EmployerConsent.Status status
 	);
 
+	long countByStatus(EmployerConsent.Status status);
+	
+	long countByOwnerIdAndStatus(UUID ownerId, EmployerConsent.Status status);
+	
+	long countByEmployerIdAndStatus(UUID employerId, EmployerConsent.Status status);
+	
+	List<EmployerConsent> findByEmployerId(UUID employerId);
+
 }

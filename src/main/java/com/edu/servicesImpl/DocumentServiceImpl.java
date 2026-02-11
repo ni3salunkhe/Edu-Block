@@ -19,8 +19,11 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import jakarta.servlet.http.HttpServletRequest;
 
-import com.edu.config.StorageConfig;
+import java.nio.file.Paths;
+import java.util.stream.Collectors;
+
 import com.edu.dto.AIResult;
+import com.edu.dto.DocumentDTO;
 import com.edu.dto.SimilarityMatch;
 import com.edu.entity.Document;
 import com.edu.repositories.DocumentRepository;
@@ -31,16 +34,13 @@ import com.edu.services.ConsentService;
 import com.edu.services.DocumentAccessService;
 import com.edu.services.DocumentService;
 import com.edu.services.SimilarityMatchService;
+import com.edu.services.StorageService;
 import com.edu.util.SecurityUtil;
+
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class DocumentServiceImpl implements DocumentService {
-	
-	@Autowired
-	StorageConfig storageConfig;
-	
-	@Autowired
-	DocumentRepository documentRepo;
 	
 	@Autowired
 	BlockchainService blockchainService;
@@ -57,9 +57,21 @@ public class DocumentServiceImpl implements DocumentService {
     @Autowired
     ConsentService consentService;
     
-    @Autowired
-    DocumentAccessService documentAccessService;
-    
+    private final DocumentRepository documentRepo;
+    private final DocumentAccessService documentAccessService;
+    private final StorageService storageService; // Inject StorageService
+    private final com.edu.repositories.EmployerConsentRepository employerConsentRepo;
+
+    public DocumentServiceImpl(DocumentRepository documentRepo,
+                               DocumentAccessService documentAccessService,
+                               StorageService storageService,
+                               com.edu.repositories.EmployerConsentRepository employerConsentRepo) {
+        this.documentRepo = documentRepo;
+        this.documentAccessService = documentAccessService;
+        this.storageService = storageService;
+        this.employerConsentRepo = employerConsentRepo;
+    }
+	
 	@Override
 	public void upload(MultipartFile file, String documentType) {
 
@@ -74,13 +86,16 @@ public class DocumentServiceImpl implements DocumentService {
 	            
 	        }
 	        
-	        // 2. Store on disk
-	        Path path = ((Path) storageConfig.getRoot())
-	                .resolve(UUID.randomUUID() + ".pdf");
-	        Files.write(path, bytes);
+	        // 2. Upload to Cloudinary
+            String secureUrl = storageService.upload(file);
 
-	        // 3. AI analysis
-	        AIResult result = aiService.analyze(path.toFile());
+	        // 3. AI analysis (Needs local file? Yes. Create temp file)
+            // AI Service expects a File object.
+            Path tempFile = Files.createTempFile("edublock-upload", ".pdf");
+            Files.write(tempFile, bytes);
+            
+	        AIResult result = aiService.analyze(tempFile.toFile());
+            Files.deleteIfExists(tempFile); // Cleanup
 
 	        SimilarityMatch match = similarityService.findSimilar(
 	                result.getPerceptualHash()
@@ -89,7 +104,7 @@ public class DocumentServiceImpl implements DocumentService {
 	        Document doc = new Document();
 	        doc.setSha256Hash(sha256);
 	        doc.setPerceptualHash(result.getPerceptualHash());
-	        doc.setFilePath(path.toString());
+	        doc.setFilePath(secureUrl); // Store URL instead of local path
             
 	        UUID userId = SecurityUtil.getCurrentUserId();
 	        doc.setOwnerId(userId);
@@ -171,50 +186,88 @@ public class DocumentServiceImpl implements DocumentService {
         }
 	}
 
+    @Override
+    public void assertCanAccess(Document doc) {
+        documentAccessService.assertCanAccess(doc);
+    }
+    
+    @Override
+    public Document getDocumentById(UUID documentId) {
 
+        Document doc = documentRepo.findById(documentId)
+            .orElseThrow(() -> new RuntimeException("Document not found"));
 
+        documentAccessService.assertCanAccess(doc);
 
+        return doc;
+    }
+    
+    @Override
+    public List<DocumentDTO> getMyDocuments() {
 
-	    @Override
-	    public void assertCanAccess(Document doc) {
-	        documentAccessService.assertCanAccess(doc);
-	    }
-	    
-	    @Override
-	    public Document getDocumentById(UUID documentId) {
+        UUID ownerId = SecurityUtil.getCurrentUserId();
+        String role = SecurityUtil.getCurrentUserRole();
 
-	        Document doc = documentRepo.findById(documentId)
-	            .orElseThrow(() -> new RuntimeException("Document not found"));
+        if (!"INDIVIDUAL".equals(role)) {
+            throw new AccessDeniedException("Only individuals can list own documents");
+        }
 
-	        documentAccessService.assertCanAccess(doc);
+        return documentRepo.findByOwnerId(ownerId).stream()
+            .map(doc -> {
+                String fileName = "document.pdf"; // Fallback
+                try {
+                     // Try to extract filename from URL if possible, or just use ID
+                     fileName = Paths.get(doc.getFilePath()).getFileName().toString();
+                } catch (Exception e) {}
+                
+                return new DocumentDTO(
+                    doc.getId(),
+                    fileName,
+                    doc.getStatus(),
+                    doc.getCreatedAt(),
+                    doc.getFilePath()
+                );
+            })
+            .collect(Collectors.toList());
+    }
 
-	        return doc;
-	    }
-	    
-	    @Override
-	    public FileSystemResource downloadDocument(UUID documentId) {
+    @Override
+    @Transactional(readOnly = true)
+    public List<DocumentDTO> getDocumentsByConsent(UUID consentId, UUID employerId) {
+        // 1. Verify consent exists
+        com.edu.entity.EmployerConsent consent = employerConsentRepo.findById(consentId)
+            .orElseThrow(() -> new RuntimeException("Consent not found"));
 
-	        Document doc = documentRepo.findById(documentId)
-	            .orElseThrow(() -> new RuntimeException("Document not found"));
+        // 2. Verify employer owns the consent
+        if (!consent.getEmployerId().equals(employerId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Unauthorized access to consent");
+        }
 
-	        documentAccessService.assertCanAccess(doc);
+        // 3. Verify consent is APPROVED
+        if (consent.getStatus() != com.edu.entity.EmployerConsent.Status.APPROVED) {
+            throw new org.springframework.security.access.AccessDeniedException("Consent is not approved");
+        }
 
-	        Path filePath = java.nio.file.Paths.get(doc.getFilePath());
-	        return new FileSystemResource(filePath);
-	    }
-	    
-	    @Override
-	    public List<Document> getMyDocuments() {
-
-	        UUID ownerId = SecurityUtil.getCurrentUserId();
-	        String role = SecurityUtil.getCurrentUserRole();
-
-	        if (!"INDIVIDUAL".equals(role)) {
-	            throw new AccessDeniedException("Only individuals can list own documents");
-	        }
-
-	        return documentRepo.findByOwnerId(ownerId);
-	    }
-
-
+        // 4. Return documents of the owner (individual)
+        // Only return APPROVED/VERIFIED documents? Usually yes, but let's return all non-deleted for now OR specific status.
+        // Assuming we return all documents the user has.
+        return documentRepo.findByOwnerId(consent.getOwnerId()).stream()
+            .map(doc -> {
+                 String fileName = "document.pdf";
+                 try {
+                     fileName = java.nio.file.Paths.get(doc.getFilePath()).getFileName().toString();
+                 } catch (Exception e) {}
+                 
+                 return new DocumentDTO(
+                     doc.getId(),
+                     fileName,
+                     doc.getStatus(),
+                     doc.getCreatedAt(),
+                     doc.getFilePath()
+                 );
+            })
+            .collect(Collectors.toList());
+    }
 }
+
+

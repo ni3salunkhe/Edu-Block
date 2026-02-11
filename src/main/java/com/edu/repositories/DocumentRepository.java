@@ -27,4 +27,10 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
         WHERE d.blockchainTx IS NOT NULL
     """)
     List<Document> findAnchoredDocuments();
+
+    long countByOwnerId(UUID ownerId);
+
+    long countByStatus(Document.Status status);
+    
+    long countByStatusIn(List<Document.Status> statuses);
 }

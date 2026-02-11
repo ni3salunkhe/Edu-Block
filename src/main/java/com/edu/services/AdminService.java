@@ -12,6 +12,10 @@ public interface AdminService {
                         String email,
                         String password);
 
+    java.util.List<com.edu.dto.UserDTO> getAllUsers();
+
+    com.edu.dto.AdminSummaryDTO getAdminSummary();
+
     void suspendUser(UUID userId);
 
     void activateUser(UUID userId);

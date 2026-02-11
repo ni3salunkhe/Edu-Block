@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -36,57 +37,33 @@ public class IndividualConsentController {
         this.auditService = auditService;
     }
 
-    @GetMapping("/pending")
-    public ResponseEntity<List<EmployerConsent>> pendingConsents() {
-
+    @GetMapping
+    public ResponseEntity<com.edu.dto.ConsentViewModel> getConsents() {
         UUID ownerId = SecurityUtil.getCurrentUserId();
-
-        return ResponseEntity.ok(
-            consentRepo.findByOwnerIdAndStatus(
-                ownerId,
-                EmployerConsent.Status.REQUESTED
-            )
-        );
+        return ResponseEntity.ok(consentService.getConsents(ownerId));
     }
-    @PostMapping("/approve")
-    public ResponseEntity<Void> approveConsent(
-            @RequestParam UUID employerId,
-            HttpServletRequest request) {
 
+    @PostMapping("/{id}/approve")
+    public ResponseEntity<Void> approveConsent(@PathVariable UUID id, HttpServletRequest request) {
         UUID ownerId = SecurityUtil.getCurrentUserId();
-
-        consentService.approveConsent(ownerId, employerId);
-
-        auditService.logIndividualAction(
-            ownerId,
-            "APPROVE_CONSENT",
-            "USER",
-            employerId,
-            null,
-            request.getRemoteAddr()
-        );
-
+        consentService.approveConsentById(id, ownerId);
+        auditService.logIndividualAction(ownerId, "APPROVE_CONSENT", "CONSENT", id, null, request.getRemoteAddr());
         return ResponseEntity.ok().build();
     }
-    
-    @PostMapping("/revoke")
-    public ResponseEntity<Void> revokeConsent(
-            @RequestParam UUID employerId,
-            HttpServletRequest request) {
 
+    @PostMapping("/{id}/reject")
+    public ResponseEntity<Void> rejectConsent(@PathVariable UUID id, HttpServletRequest request) {
         UUID ownerId = SecurityUtil.getCurrentUserId();
+        consentService.rejectConsentById(id, ownerId);
+        auditService.logIndividualAction(ownerId, "REJECT_CONSENT", "CONSENT", id, null, request.getRemoteAddr());
+        return ResponseEntity.ok().build();
+    }
 
-        consentService.revokeConsent(ownerId, employerId);
-
-        auditService.logIndividualAction(
-            ownerId,
-            "REVOKE_CONSENT",
-            "USER",
-            employerId,
-            null,
-            request.getRemoteAddr()
-        );
-
+    @PostMapping("/{id}/revoke")
+    public ResponseEntity<Void> revokeConsent(@PathVariable UUID id, HttpServletRequest request) {
+        UUID ownerId = SecurityUtil.getCurrentUserId();
+        consentService.revokeConsentById(id, ownerId);
+        auditService.logIndividualAction(ownerId, "REVOKE_CONSENT", "CONSENT", id, null, request.getRemoteAddr());
         return ResponseEntity.ok().build();
     }
 }

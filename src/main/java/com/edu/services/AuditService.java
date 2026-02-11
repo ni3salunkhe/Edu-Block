@@ -39,5 +39,7 @@ public interface AuditService {
         String metadata,
         String ipAddress
     );
+
+    java.util.List<com.edu.dto.AuditLogDTO> getAllLogs();
     
 }

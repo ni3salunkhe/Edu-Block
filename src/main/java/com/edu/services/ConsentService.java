@@ -11,4 +11,13 @@ public interface ConsentService {
     void approveConsent(UUID ownerId, UUID employerId);
 
     void revokeConsent(UUID ownerId, UUID employerId);
+
+    // New methods for frontend alignment
+    com.edu.dto.ConsentViewModel getConsents(UUID ownerId);
+
+    void approveConsentById(UUID consentId, UUID ownerId);
+
+    void rejectConsentById(UUID consentId, UUID ownerId);
+
+    void revokeConsentById(UUID consentId, UUID ownerId);
 }

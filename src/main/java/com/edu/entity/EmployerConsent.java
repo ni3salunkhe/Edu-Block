@@ -43,6 +43,7 @@ public class EmployerConsent {
         REQUESTED,
         APPROVED,
         REVOKED,
-        EXPIRED
+        EXPIRED,
+        REJECTED
     }
 }

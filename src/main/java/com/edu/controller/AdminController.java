@@ -10,9 +10,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
+import com.edu.dto.UserDTO;
 import com.edu.entity.User;
 import com.edu.entity.VerifierProfile;
 import com.edu.services.AdminService;
+import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -20,9 +24,26 @@ import com.edu.services.AdminService;
 public class AdminController {
 
     private final AdminService adminService;
+    private final com.edu.services.AuditService auditService;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(AdminService adminService, com.edu.services.AuditService auditService) {
         this.adminService = adminService;
+        this.auditService = auditService;
+    }
+
+    @GetMapping("/users")
+    public List<UserDTO> getAllUsers() {
+        return adminService.getAllUsers();
+    }
+
+    @GetMapping("/summary")
+    public com.edu.dto.AdminSummaryDTO getAdminSummary() {
+        return adminService.getAdminSummary();
+    }
+
+    @GetMapping("/audit")
+    public List<com.edu.dto.AuditLogDTO> getAuditLogs() {
+        return auditService.getAllLogs();
     }
 
     @PostMapping("/verifiers")

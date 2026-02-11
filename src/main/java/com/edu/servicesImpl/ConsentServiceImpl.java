@@ -2,13 +2,19 @@ package com.edu.servicesImpl;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.edu.dto.ConsentDTO;
+import com.edu.dto.ConsentViewModel;
 import com.edu.entity.EmployerConsent;
+import com.edu.entity.EmployerProfile;
 import com.edu.entity.User;
 import com.edu.repositories.EmployerConsentRepository;
+import com.edu.repositories.EmployerProfileRepository;
 import com.edu.repositories.UserRepository;
 import com.edu.services.ConsentService;
 
@@ -20,11 +26,14 @@ public class ConsentServiceImpl implements ConsentService {
 
     private final EmployerConsentRepository consentRepo;
     private final UserRepository userRepo;
+    private final EmployerProfileRepository employerProfileRepo;
 
     public ConsentServiceImpl(EmployerConsentRepository consentRepo,
-                              UserRepository userRepo) {
+                              UserRepository userRepo,
+                              EmployerProfileRepository employerProfileRepo) {
         this.consentRepo = consentRepo;
         this.userRepo = userRepo;
+        this.employerProfileRepo = employerProfileRepo;
     }
 
     // -------------------------------------------------
@@ -139,5 +148,82 @@ public class ConsentServiceImpl implements ConsentService {
      */
     private static class SilentReturnException extends RuntimeException {
         private SilentReturnException() {}
+    }
+
+    @Override
+    public ConsentViewModel getConsents(UUID ownerId) {
+        List<EmployerConsent> allConsents = consentRepo.findAll(); // Optimization: should filter by ownerId, but repo method missing?
+        // Wait, repo has findByOwnerIdAndStatus. I should use that or findByOwnerId (need to add it?).
+        // For now, let's look at available repo methods. 
+        // User provided View of EmployerConsentRepository earlier: 
+        // findByOwnerIdAndStatus(UUID ownerId, EmployerConsent.Status status);
+        // findByEmployerIdAndOwnerId(UUID employerId, UUID ownerId);
+        
+        // I should fetch PENDING (REQUESTED) and ACTIVE (APPROVED) separately.
+        
+        List<ConsentDTO> pending = consentRepo.findByOwnerIdAndStatus(ownerId, EmployerConsent.Status.REQUESTED).stream()
+            .map(this::mapToDTO)
+            .collect(Collectors.toList());
+            
+        List<ConsentDTO> active = consentRepo.findByOwnerIdAndStatus(ownerId, EmployerConsent.Status.APPROVED).stream()
+            .map(this::mapToDTO)
+            .collect(Collectors.toList());
+            
+        return new ConsentViewModel(pending, active);
+    }
+    
+    private ConsentDTO mapToDTO(EmployerConsent consent) {
+        String employerName = employerProfileRepo.findById(consent.getEmployerId())
+            .map(EmployerProfile::getCompanyName)
+            .orElse("Unknown Employer");
+            
+        return new ConsentDTO(
+            consent.getId(),
+            consent.getEmployerId(),
+            employerName,
+            consent.getStatus(),
+            consent.getCreatedAt()
+        );
+    }
+
+    @Override
+    public void approveConsentById(UUID consentId, UUID ownerId) {
+        EmployerConsent consent = consentRepo.findById(consentId)
+            .orElseThrow(() -> new RuntimeException("Consent not found"));
+            
+        if (!consent.getOwnerId().equals(ownerId)) {
+            throw new RuntimeException("Unauthorized");
+        }
+        
+        consent.setStatus(EmployerConsent.Status.APPROVED);
+        consent.setValidFrom(Instant.now());
+        consent.setValidUntil(Instant.now().plus(30, ChronoUnit.DAYS));
+        consentRepo.save(consent);
+    }
+
+    @Override
+    public void rejectConsentById(UUID consentId, UUID ownerId) {
+        EmployerConsent consent = consentRepo.findById(consentId)
+            .orElseThrow(() -> new RuntimeException("Consent not found"));
+            
+        if (!consent.getOwnerId().equals(ownerId)) {
+            throw new RuntimeException("Unauthorized");
+        }
+        
+        consent.setStatus(EmployerConsent.Status.REJECTED);
+        consentRepo.save(consent);
+    }
+
+    @Override
+    public void revokeConsentById(UUID consentId, UUID ownerId) {
+        EmployerConsent consent = consentRepo.findById(consentId)
+            .orElseThrow(() -> new RuntimeException("Consent not found"));
+            
+        if (!consent.getOwnerId().equals(ownerId)) {
+            throw new RuntimeException("Unauthorized");
+        }
+        
+        consent.setStatus(EmployerConsent.Status.REVOKED);
+        consentRepo.save(consent);
     }
 }
