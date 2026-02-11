@@ -1,5 +1,6 @@
 package com.edu.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -15,6 +16,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
+    
+    @Value("${frontend.url:http://localhost:3000,http://localhost:5173}")
+    private String frontendUrl;
     
 
     public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
@@ -46,8 +50,8 @@ public class SecurityConfig {
     @Bean
     public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
         org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
-        // Allow all origins for now to avoid issues, but in production, restrict this to the frontend URL
-        configuration.setAllowedOrigins(java.util.List.of("http://localhost:3000", "http://localhost:5173")); // React/Vite default ports
+        // Split comma-separated URLs from environment variable
+        configuration.setAllowedOrigins(java.util.Arrays.asList(frontendUrl.split(",")));
         configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
         configuration.setAllowCredentials(true);
