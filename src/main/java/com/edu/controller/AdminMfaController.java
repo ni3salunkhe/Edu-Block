@@ -82,17 +82,27 @@ public class AdminMfaController {
     @PostMapping("/verify")
     public LoginResponse verify(@RequestBody MfaVerifyRequest req) {
 
+        System.out.println("=== MFA VERIFICATION DEBUG ===");
+        System.out.println("MFA Token: " + req.getMfaToken());
+        System.out.println("OTP received: " + req.getOtp());
+        
         UUID adminId = mfaTokenStore.consumeToken(req.getMfaToken());
+        System.out.println("Admin ID from token: " + adminId);
 
         AdminMfa mfa = mfaRepo.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("MFA not setup"));
 
+        System.out.println("MFA Secret (first 10 chars): " + mfa.getSecret().substring(0, Math.min(10, mfa.getSecret().length())));
+        System.out.println("Verifying OTP...");
+        
         if (!totpService.verifyCode(mfa.getSecret(), req.getOtp())) {
+            System.out.println("OTP verification FAILED");
             mfa.setFailedAttempts(mfa.getFailedAttempts() + 1);
             mfaRepo.save(mfa);
             throw new RuntimeException("Invalid OTP");
         }
 
+        System.out.println("OTP verification SUCCESS");
         mfa.setEnabled(true);
         mfa.setFailedAttempts(0);
         mfa.setLastVerifiedAt(Instant.now());
@@ -104,6 +114,8 @@ public class AdminMfaController {
         resp.setToken(jwtUtil.generateToken(admin));
         resp.setRole("ADMIN");
         resp.setMfaRequired(false);
+        
+        System.out.println("Returning response with token and role");
         return resp;
     }
 
