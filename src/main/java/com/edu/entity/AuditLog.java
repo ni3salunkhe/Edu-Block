@@ -1,6 +1,7 @@
 package com.edu.entity;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.hibernate.annotations.JdbcTypeCode;
@@ -13,9 +14,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.Data;
 
-@Data
 @Entity
 @Table(name = "audit_logs")
 public class AuditLog {
@@ -54,5 +53,114 @@ public class AuditLog {
         VERIFIER,
         EMPLOYER,
         INDIVIDUAL
+    }
+
+    // Getters and Setters
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public UUID getActorUserId() {
+        return actorUserId;
+    }
+
+    public void setActorUserId(UUID actorUserId) {
+        this.actorUserId = actorUserId;
+    }
+
+    public ActorRole getActorRole() {
+        return actorRole;
+    }
+
+    public void setActorRole(ActorRole actorRole) {
+        this.actorRole = actorRole;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
+
+    public String getTargetType() {
+        return targetType;
+    }
+
+    public void setTargetType(String targetType) {
+        this.targetType = targetType;
+    }
+
+    public UUID getTargetId() {
+        return targetId;
+    }
+
+    public void setTargetId(UUID targetId) {
+        this.targetId = targetId;
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AuditLog auditLog = (AuditLog) o;
+        return Objects.equals(id, auditLog.id) &&
+               Objects.equals(actorUserId, auditLog.actorUserId) &&
+               actorRole == auditLog.actorRole &&
+               Objects.equals(action, auditLog.action) &&
+               Objects.equals(targetType, auditLog.targetType) &&
+               Objects.equals(targetId, auditLog.targetId) &&
+               Objects.equals(metadata, auditLog.metadata) &&
+               Objects.equals(ipAddress, auditLog.ipAddress) &&
+               Objects.equals(createdAt, auditLog.createdAt);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, actorUserId, actorRole, action, targetType, 
+                          targetId, metadata, ipAddress, createdAt);
+    }
+
+    @Override
+    public String toString() {
+        return "AuditLog{" +
+                "id=" + id +
+                ", actorUserId=" + actorUserId +
+                ", actorRole=" + actorRole +
+                ", action='" + action + '\'' +
+                ", targetType='" + targetType + '\'' +
+                ", targetId=" + targetId +
+                ", ipAddress='" + ipAddress + '\'' +
+                ", createdAt=" + createdAt +
+                '}';
     }
 }
