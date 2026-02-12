@@ -26,7 +26,7 @@ services:
       - key: SERVER_PORT
         value: 10000
       - key: FILE_STORAGE
-        value: /tmp/storage
+        value: /app/uploads
 
 databases:
   - name: edublock-db
