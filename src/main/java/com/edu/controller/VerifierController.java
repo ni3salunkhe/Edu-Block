@@ -12,8 +12,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.Map;
 
 import com.edu.dto.VerifierDocumentDTO;
 import com.edu.dto.VerifierSummaryDTO;
@@ -67,8 +69,10 @@ public class VerifierController {
     }
 
     @PatchMapping("/document/{id}/reject")
-    public ResponseEntity<Void> reject(@PathVariable UUID id) {
-        documentService.reject(id);
+    public ResponseEntity<Void> reject(@PathVariable UUID id,
+                                       @RequestBody(required = false) Map<String, String> body) {
+        String comment = (body != null) ? body.getOrDefault("comment", "") : "";
+        documentService.rejectWithComment(id, comment);
         return ResponseEntity.ok().build();
     }
 

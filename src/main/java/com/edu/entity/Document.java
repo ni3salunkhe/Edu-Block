@@ -49,6 +49,9 @@ public class Document {
 
     private UUID matchedDocumentId;
 
+    @Column(length = 1000)
+    private String rejectionComment;
+
     public enum Status {
         UPLOADED,
         AI_FLAGGED,
@@ -137,6 +140,14 @@ public class Document {
 
     public void setMatchedDocumentId(UUID matchedDocumentId) {
         this.matchedDocumentId = matchedDocumentId;
+    }
+
+    public String getRejectionComment() {
+        return rejectionComment;
+    }
+
+    public void setRejectionComment(String rejectionComment) {
+        this.rejectionComment = rejectionComment;
     }
 
     @Override

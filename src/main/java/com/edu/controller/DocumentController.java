@@ -8,6 +8,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,9 +56,18 @@ public class DocumentController {
     @GetMapping("/{id}/view")
     public ResponseEntity<Void> viewDocument(@PathVariable UUID id) {
         Document doc = documentService.getDocumentById(id);
-        
         return ResponseEntity.status(302)
             .header("Location", doc.getFilePath())
             .build();
+    }
+
+    /**
+     * Called by the individual user AFTER reading the rejection reason.
+     * Permanently deletes the rejected document record from the database.
+     */
+    @DeleteMapping("/{id}/acknowledge-rejection")
+    public ResponseEntity<Void> acknowledgeRejection(@PathVariable UUID id) {
+        documentService.acknowledgeRejection(id);
+        return ResponseEntity.noContent().build();
     }
 }

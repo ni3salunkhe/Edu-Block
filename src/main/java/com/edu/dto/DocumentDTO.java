@@ -12,6 +12,7 @@ public class DocumentDTO {
     private Document.Status status;
     private Instant createdAt;
     private String filePath;
+    private String rejectionComment;
 
     public DocumentDTO() {
     }
@@ -22,6 +23,16 @@ public class DocumentDTO {
         this.status = status;
         this.createdAt = createdAt;
         this.filePath = filePath;
+        this.rejectionComment = null;
+    }
+
+    public DocumentDTO(UUID id, String fileName, Document.Status status, Instant createdAt, String filePath, String rejectionComment) {
+        this.id = id;
+        this.fileName = fileName;
+        this.status = status;
+        this.createdAt = createdAt;
+        this.filePath = filePath;
+        this.rejectionComment = rejectionComment;
     }
 
     public UUID getId() {
@@ -62,6 +73,14 @@ public class DocumentDTO {
 
     public void setFilePath(String filePath) {
         this.filePath = filePath;
+    }
+
+    public String getRejectionComment() {
+        return rejectionComment;
+    }
+
+    public void setRejectionComment(String rejectionComment) {
+        this.rejectionComment = rejectionComment;
     }
 
     @Override

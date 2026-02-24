@@ -32,6 +32,9 @@ public class GlobalExceptionHandler {
                 message.contains("not found") ||
                 message.contains("not setup")) {
                 status = HttpStatus.UNAUTHORIZED;
+            } else if (message.contains("suspended") ||
+                       message.contains("pending approval")) {
+                status = HttpStatus.FORBIDDEN;
             } else if (message.contains("Not an admin") ||
                       message.contains("permission") ||
                       message.contains("Access denied")) {

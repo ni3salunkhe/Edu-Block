@@ -13,7 +13,8 @@ public interface DocumentService {
 	public void upload(MultipartFile file, String type);
 	List<Document> getPendingForVerification();
 	void approve(UUID documentId);
-	void reject(UUID documentId);
+	void rejectWithComment(UUID documentId, String comment);
+	void acknowledgeRejection(UUID documentId);
 	void assertCanAccess(Document document);
 	Document getDocumentById(UUID documentId);
 	List<com.edu.dto.DocumentDTO> getMyDocuments();

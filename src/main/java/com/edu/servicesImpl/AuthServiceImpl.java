@@ -39,6 +39,14 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Invalid credentials");
         }
 
+        // Block non-active accounts before issuing any token
+        if (user.getStatus() == User.Status.SUSPENDED) {
+            throw new RuntimeException("Your account has been suspended. Please contact support.");
+        }
+        if (user.getStatus() == User.Status.PENDING) {
+            throw new RuntimeException("Your account is pending approval. Please wait for activation.");
+        }
+
         if (user.getRole() == User.Role.ADMIN) {
 
             LoginResponse resp = new LoginResponse();
