@@ -27,11 +27,14 @@ public class GlobalExceptionHandler {
         
         String message = ex.getMessage();
         if (message != null) {
-            if (message.contains("Invalid OTP") || 
+            if (message.contains("Invalid OTP") ||
                 message.contains("Invalid or expired") ||
                 message.contains("not found") ||
                 message.contains("not setup")) {
                 status = HttpStatus.UNAUTHORIZED;
+            } else if (message.contains("Rate limit") ||
+                       message.contains("Too many requests")) {
+                status = HttpStatus.TOO_MANY_REQUESTS;
             } else if (message.contains("suspended") ||
                        message.contains("pending approval")) {
                 status = HttpStatus.FORBIDDEN;
