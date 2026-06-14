@@ -33,4 +33,11 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
     long countByStatus(Document.Status status);
     
     long countByStatusIn(List<Document.Status> statuses);
+
+    boolean existsByIssuingInstitutionIdAndCredentialReferenceAndSource(
+        UUID issuingInstitutionId, String credentialReference, com.edu.entity.DocumentSource source
+    );
+
+    List<Document> findByIssuingInstitutionId(UUID issuingInstitutionId);
+    List<Document> findByOwnerIdIn(java.util.Collection<UUID> ownerIds);
 }

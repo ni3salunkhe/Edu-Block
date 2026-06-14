@@ -7,6 +7,7 @@ public class LoginResponse {
     private String token;       // JWT (normal users)
     private String role;
     private boolean mfaRequired;
+    private boolean mfaSetupRequired;
     private String mfaToken;    // admin only
 
     public String getToken() {
@@ -33,6 +34,14 @@ public class LoginResponse {
         this.mfaRequired = mfaRequired;
     }
 
+    public boolean isMfaSetupRequired() {
+        return mfaSetupRequired;
+    }
+
+    public void setMfaSetupRequired(boolean mfaSetupRequired) {
+        this.mfaSetupRequired = mfaSetupRequired;
+    }
+
     public String getMfaToken() {
         return mfaToken;
     }
@@ -47,6 +56,7 @@ public class LoginResponse {
         if (o == null || getClass() != o.getClass()) return false;
         LoginResponse that = (LoginResponse) o;
         return mfaRequired == that.mfaRequired &&
+               mfaSetupRequired == that.mfaSetupRequired &&
                Objects.equals(token, that.token) &&
                Objects.equals(role, that.role) &&
                Objects.equals(mfaToken, that.mfaToken);
@@ -54,7 +64,7 @@ public class LoginResponse {
 
     @Override
     public int hashCode() {
-        return Objects.hash(token, role, mfaRequired, mfaToken);
+        return Objects.hash(token, role, mfaRequired, mfaSetupRequired, mfaToken);
     }
 
     @Override
@@ -63,6 +73,7 @@ public class LoginResponse {
                 "token='" + token + '\'' +
                 ", role='" + role + '\'' +
                 ", mfaRequired=" + mfaRequired +
+                ", mfaSetupRequired=" + mfaSetupRequired +
                 ", mfaToken='" + mfaToken + '\'' +
                 '}';
     }

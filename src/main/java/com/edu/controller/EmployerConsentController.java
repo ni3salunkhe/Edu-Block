@@ -53,7 +53,7 @@ public class EmployerConsentController {
                     .map(User::getUsername)
                     .orElse("Unknown");
                     
-                return new EmployerConsentListDTO(c.getId(), individualName, c.getStatus());
+                return new EmployerConsentListDTO(c.getId(), individualName, c.getStatus(), c.getCreatedAt());
             })
             .collect(Collectors.toList());
     }

@@ -36,8 +36,8 @@ public class DocumentController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<Document> getDocument(@PathVariable UUID id) {
-	    return ResponseEntity.ok(documentService.getDocumentById(id));
+	public ResponseEntity<com.edu.dto.DocumentDTO> getDocument(@PathVariable UUID id) {
+	    return ResponseEntity.ok(documentService.getDocumentDTO(id));
 	}
 
     @GetMapping("/my")

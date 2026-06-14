@@ -1,5 +1,6 @@
 package com.edu.repositories;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,5 +26,7 @@ public interface EmployerConsentRepository extends JpaRepository<EmployerConsent
 	long countByEmployerIdAndStatus(UUID employerId, EmployerConsent.Status status);
 	
 	List<EmployerConsent> findByEmployerId(UUID employerId);
+
+	List<EmployerConsent> findByOwnerIdAndStatusIn(UUID ownerId, Collection<EmployerConsent.Status> statuses);
 
 }

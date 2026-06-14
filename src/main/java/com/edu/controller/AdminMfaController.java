@@ -48,7 +48,9 @@ public class AdminMfaController {
     }
 
     @PostMapping("/setup")
-    public Map<String, String> setupMfa(@RequestParam UUID adminId) {
+    public Map<String, String> setupMfa(@RequestParam String mfaToken) {
+
+        UUID adminId = mfaTokenStore.peekToken(mfaToken);
 
         User admin = userRepo.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));

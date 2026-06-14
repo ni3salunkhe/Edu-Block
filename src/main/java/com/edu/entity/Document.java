@@ -32,6 +32,16 @@ public class Document {
 
     private String documentType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DocumentSource source = DocumentSource.INDIVIDUAL_UPLOAD;
+
+    private UUID issuingInstitutionId;
+
+    private UUID associationId;
+
+    private String credentialReference;
+
     private String filePath;
 
     @Column(nullable = false)
@@ -148,6 +158,38 @@ public class Document {
 
     public void setRejectionComment(String rejectionComment) {
         this.rejectionComment = rejectionComment;
+    }
+
+    public DocumentSource getSource() {
+        return source;
+    }
+
+    public void setSource(DocumentSource source) {
+        this.source = source;
+    }
+
+    public UUID getIssuingInstitutionId() {
+        return issuingInstitutionId;
+    }
+
+    public void setIssuingInstitutionId(UUID issuingInstitutionId) {
+        this.issuingInstitutionId = issuingInstitutionId;
+    }
+
+    public UUID getAssociationId() {
+        return associationId;
+    }
+
+    public void setAssociationId(UUID associationId) {
+        this.associationId = associationId;
+    }
+
+    public String getCredentialReference() {
+        return credentialReference;
+    }
+
+    public void setCredentialReference(String credentialReference) {
+        this.credentialReference = credentialReference;
     }
 
     @Override

@@ -13,6 +13,7 @@ public class DocumentDTO {
     private Instant createdAt;
     private String filePath;
     private String rejectionComment;
+    private DocumentTrustResponseDTO trustMetadata;
 
     public DocumentDTO() {
     }
@@ -24,6 +25,7 @@ public class DocumentDTO {
         this.createdAt = createdAt;
         this.filePath = filePath;
         this.rejectionComment = null;
+        this.trustMetadata = null;
     }
 
     public DocumentDTO(UUID id, String fileName, Document.Status status, Instant createdAt, String filePath, String rejectionComment) {
@@ -33,6 +35,17 @@ public class DocumentDTO {
         this.createdAt = createdAt;
         this.filePath = filePath;
         this.rejectionComment = rejectionComment;
+        this.trustMetadata = null;
+    }
+
+    public DocumentDTO(UUID id, String fileName, Document.Status status, Instant createdAt, String filePath, String rejectionComment, DocumentTrustResponseDTO trustMetadata) {
+        this.id = id;
+        this.fileName = fileName;
+        this.status = status;
+        this.createdAt = createdAt;
+        this.filePath = filePath;
+        this.rejectionComment = rejectionComment;
+        this.trustMetadata = trustMetadata;
     }
 
     public UUID getId() {
@@ -81,6 +94,14 @@ public class DocumentDTO {
 
     public void setRejectionComment(String rejectionComment) {
         this.rejectionComment = rejectionComment;
+    }
+
+    public DocumentTrustResponseDTO getTrustMetadata() {
+        return trustMetadata;
+    }
+
+    public void setTrustMetadata(DocumentTrustResponseDTO trustMetadata) {
+        this.trustMetadata = trustMetadata;
     }
 
     @Override

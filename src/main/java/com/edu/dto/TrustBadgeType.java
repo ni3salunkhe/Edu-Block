@@ -1,0 +1,9 @@
+package com.edu.dto;
+
+public enum TrustBadgeType {
+    ACCREDITED_INSTITUTION,
+    VERIFIED_INSTITUTION,
+    INSTITUTION_ISSUED,
+    VERIFIER_APPROVED,
+    BLOCKCHAIN_VERIFIED
+}

@@ -12,6 +12,8 @@ public class ConsentDTO {
     private String employerName;
     private EmployerConsent.Status status;
     private Instant createdAt;
+    private Instant validUntil;
+    private Instant decisionAt;
 
     public ConsentDTO() {
     }
@@ -22,6 +24,17 @@ public class ConsentDTO {
         this.employerName = employerName;
         this.status = status;
         this.createdAt = createdAt;
+    }
+
+    public ConsentDTO(UUID id, UUID employerId, String employerName, EmployerConsent.Status status,
+                      Instant createdAt, Instant validUntil, Instant decisionAt) {
+        this.id = id;
+        this.employerId = employerId;
+        this.employerName = employerName;
+        this.status = status;
+        this.createdAt = createdAt;
+        this.validUntil = validUntil;
+        this.decisionAt = decisionAt;
     }
 
     public UUID getId() {
@@ -64,6 +77,22 @@ public class ConsentDTO {
         this.createdAt = createdAt;
     }
 
+    public Instant getValidUntil() {
+        return validUntil;
+    }
+
+    public void setValidUntil(Instant validUntil) {
+        this.validUntil = validUntil;
+    }
+
+    public Instant getDecisionAt() {
+        return decisionAt;
+    }
+
+    public void setDecisionAt(Instant decisionAt) {
+        this.decisionAt = decisionAt;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -73,12 +102,14 @@ public class ConsentDTO {
                Objects.equals(employerId, that.employerId) &&
                Objects.equals(employerName, that.employerName) &&
                status == that.status &&
-               Objects.equals(createdAt, that.createdAt);
+               Objects.equals(createdAt, that.createdAt) &&
+               Objects.equals(validUntil, that.validUntil) &&
+               Objects.equals(decisionAt, that.decisionAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, employerId, employerName, status, createdAt);
+        return Objects.hash(id, employerId, employerName, status, createdAt, validUntil, decisionAt);
     }
 
     @Override
@@ -89,6 +120,8 @@ public class ConsentDTO {
                 ", employerName='" + employerName + '\'' +
                 ", status=" + status +
                 ", createdAt=" + createdAt +
+                ", validUntil=" + validUntil +
+                ", decisionAt=" + decisionAt +
                 '}';
     }
 }

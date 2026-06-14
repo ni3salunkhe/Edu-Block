@@ -28,4 +28,12 @@ public class MfaTokenStore {
         expiry.remove(token);
         return tokenToUser.remove(token);
     }
+
+    public UUID peekToken(String token) {
+        Instant exp = expiry.get(token);
+        if (exp == null || Instant.now().isAfter(exp)) {
+            throw new RuntimeException("MFA token expired");
+        }
+        return tokenToUser.get(token);
+    }
 }

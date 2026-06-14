@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -56,6 +58,12 @@ public class DocumentServiceImpl implements DocumentService {
     
     @Autowired
     ConsentService consentService;
+
+    @Autowired
+    private com.edu.services.TrustEvaluationService trustEvaluationService;
+
+    @Autowired
+    private com.edu.repositories.InstitutionRepository institutionRepository;
     
     private final DocumentRepository documentRepo;
     private final DocumentAccessService documentAccessService;
@@ -249,7 +257,6 @@ public class DocumentServiceImpl implements DocumentService {
     
     @Override
     public List<DocumentDTO> getMyDocuments() {
-
         UUID ownerId = SecurityUtil.getCurrentUserId();
         String role = SecurityUtil.getCurrentUserRole();
 
@@ -257,7 +264,15 @@ public class DocumentServiceImpl implements DocumentService {
             throw new AccessDeniedException("Only individuals can list own documents");
         }
 
-        return documentRepo.findByOwnerId(ownerId).stream()
+        List<Document> docs = documentRepo.findByOwnerId(ownerId);
+        List<com.edu.dto.DocumentTrustResponseDTO> trustList = 
+                trustEvaluationService.evaluateDocuments(docs);
+        
+        Map<UUID, com.edu.dto.DocumentTrustResponseDTO> trustMap = trustList.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(com.edu.dto.DocumentTrustResponseDTO::getDocumentId, t -> t));
+
+        return docs.stream()
             .map(doc -> {
                 String fileName = "Document-" + doc.getId().toString().substring(0, 8).toUpperCase();
                 try {
@@ -266,13 +281,16 @@ public class DocumentServiceImpl implements DocumentService {
                     }
                 } catch (Exception e) {}
 
+                com.edu.dto.DocumentTrustResponseDTO trust = trustMap.get(doc.getId());
+
                 return new DocumentDTO(
                     doc.getId(),
                     fileName,
                     doc.getStatus(),
                     doc.getCreatedAt(),
                     doc.getFilePath(),
-                    doc.getRejectionComment()
+                    doc.getRejectionComment(),
+                    trust
                 );
             })
             .collect(Collectors.toList());
@@ -296,24 +314,64 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         // 4. Return documents of the owner (individual)
-        // Only return APPROVED/VERIFIED documents? Usually yes, but let's return all non-deleted for now OR specific status.
-        // Assuming we return all documents the user has.
-        return documentRepo.findByOwnerId(consent.getOwnerId()).stream()
+        List<Document> docs = documentRepo.findByOwnerId(consent.getOwnerId());
+        List<com.edu.dto.DocumentTrustResponseDTO> trustList = 
+                trustEvaluationService.evaluateDocuments(docs);
+        
+        Map<UUID, com.edu.dto.DocumentTrustResponseDTO> trustMap = trustList.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(com.edu.dto.DocumentTrustResponseDTO::getDocumentId, t -> t));
+
+        return docs.stream()
             .map(doc -> {
                  String fileName = "document.pdf";
                  try {
                      fileName = java.nio.file.Paths.get(doc.getFilePath()).getFileName().toString();
                  } catch (Exception e) {}
                  
+                 com.edu.dto.DocumentTrustResponseDTO trust = trustMap.get(doc.getId());
+
                  return new DocumentDTO(
                      doc.getId(),
                      fileName,
                      doc.getStatus(),
                      doc.getCreatedAt(),
-                     doc.getFilePath()
+                     doc.getFilePath(),
+                     doc.getRejectionComment(),
+                     trust
                  );
             })
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public DocumentDTO getDocumentDTO(UUID documentId) {
+        Document doc = getDocumentById(documentId); // Asserts access internally
+        
+        com.edu.entity.Institution institution = null;
+        if (doc.getIssuingInstitutionId() != null) {
+            institution = institutionRepository.findById(doc.getIssuingInstitutionId()).orElse(null);
+        }
+        
+        com.edu.dto.DocumentTrustResponseDTO trustMetadata = 
+                trustEvaluationService.evaluateDocument(doc, institution);
+
+        String fileName = "Document-" + doc.getId().toString().substring(0, 8).toUpperCase();
+        try {
+            if (doc.getFilePath() != null) {
+                fileName = Paths.get(doc.getFilePath()).getFileName().toString();
+            }
+        } catch (Exception e) {}
+
+        return new DocumentDTO(
+            doc.getId(),
+            fileName,
+            doc.getStatus(),
+            doc.getCreatedAt(),
+            doc.getFilePath(),
+            doc.getRejectionComment(),
+            trustMetadata
+        );
     }
 }
 

@@ -20,5 +20,5 @@ public interface DocumentService {
 	List<com.edu.dto.DocumentDTO> getMyDocuments();
 	
 	List<com.edu.dto.DocumentDTO> getDocumentsByConsent(UUID consentId, UUID employerId);
-
+	com.edu.dto.DocumentDTO getDocumentDTO(UUID documentId);
 }

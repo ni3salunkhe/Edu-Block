@@ -18,15 +18,18 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final MfaTokenStore mfaTokenStore;
+    private final com.edu.repositories.AdminMfaRepository adminMfaRepo;
 
     public AuthServiceImpl(UserRepository userRepo,
                            PasswordEncoder passwordEncoder,
                            JwtUtil jwtUtil,
-                           MfaTokenStore mfaTokenStore) {
+                           MfaTokenStore mfaTokenStore,
+                           com.edu.repositories.AdminMfaRepository adminMfaRepo) {
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
-		this.mfaTokenStore = mfaTokenStore;
+        this.mfaTokenStore = mfaTokenStore;
+        this.adminMfaRepo = adminMfaRepo;
     }
 
     @Override
@@ -48,10 +51,19 @@ public class AuthServiceImpl implements AuthService {
         }
 
         if (user.getRole() == User.Role.ADMIN) {
-
             LoginResponse resp = new LoginResponse();
-            resp.setMfaRequired(true);
             resp.setRole("ADMIN");
+
+            // Check if MFA is already setup and enabled
+            boolean mfaEnabled = adminMfaRepo.findById(user.getId())
+                    .map(com.edu.entity.AdminMfa::isEnabled)
+                    .orElse(false);
+
+            if (!mfaEnabled) {
+                resp.setMfaSetupRequired(true);
+            } else {
+                resp.setMfaRequired(true);
+            }
 
             String mfaToken = mfaTokenStore.createToken(user.getId());
             resp.setMfaToken(mfaToken);
