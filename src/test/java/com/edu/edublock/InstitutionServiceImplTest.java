@@ -37,6 +37,9 @@ class InstitutionServiceImplTest {
     @Mock
     private AuditService auditService;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private InstitutionServiceImpl institutionService;
 

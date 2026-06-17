@@ -42,6 +42,9 @@ import com.edu.services.StorageService;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.springframework.context.ApplicationEventPublisher;
+import com.edu.dto.events.CredentialEvents.CredentialIssuedEvent;
+
 @Service
 public class InstitutionCredentialServiceImpl implements InstitutionCredentialService {
 
@@ -53,6 +56,7 @@ public class InstitutionCredentialServiceImpl implements InstitutionCredentialSe
     private final BlockchainService blockchainService;
     private final AuditService auditService;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public InstitutionCredentialServiceImpl(InstitutionUserRepository institutionUserRepo,
                                              InstitutionAssociationRepository associationRepo,
@@ -61,7 +65,8 @@ public class InstitutionCredentialServiceImpl implements InstitutionCredentialSe
                                              StorageService storageService,
                                              BlockchainService blockchainService,
                                              AuditService auditService,
-                                             UserRepository userRepository) {
+                                             UserRepository userRepository,
+                                             ApplicationEventPublisher eventPublisher) {
         this.institutionUserRepo = institutionUserRepo;
         this.associationRepo = associationRepo;
         this.documentRepo = documentRepo;
@@ -70,6 +75,7 @@ public class InstitutionCredentialServiceImpl implements InstitutionCredentialSe
         this.blockchainService = blockchainService;
         this.auditService = auditService;
         this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -169,6 +175,8 @@ public class InstitutionCredentialServiceImpl implements InstitutionCredentialSe
             metadata,
             ip
         );
+
+        eventPublisher.publishEvent(new CredentialIssuedEvent(institution.getId(), saved.getId()));
 
         String studentName = userRepository.findById(studentId)
                 .map(User::getUsername).orElse("Student");

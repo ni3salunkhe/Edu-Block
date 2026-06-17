@@ -148,11 +148,22 @@ public class DocumentVerificationResult {
         this.fraudSignals = fraudSignals;
     }
 
+    @Column(name = "institution_trust_score_at_verification")
+    private Integer institutionTrustScoreAtVerification;
+
     public Instant getProcessedAt() {
         return processedAt;
     }
 
     public void setProcessedAt(Instant processedAt) {
         this.processedAt = processedAt;
+    }
+
+    public Integer getInstitutionTrustScoreAtVerification() {
+        return institutionTrustScoreAtVerification;
+    }
+
+    public void setInstitutionTrustScoreAtVerification(Integer institutionTrustScoreAtVerification) {
+        this.institutionTrustScoreAtVerification = institutionTrustScoreAtVerification;
     }
 }

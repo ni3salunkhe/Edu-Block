@@ -16,6 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.*;
 
+import org.springframework.context.ApplicationEventPublisher;
+import com.edu.repositories.InstitutionTrustProfileRepository;
+
 @Service
 public class DocumentVerificationServiceImpl implements DocumentVerificationService {
 
@@ -28,6 +31,8 @@ public class DocumentVerificationServiceImpl implements DocumentVerificationServ
     private final InstitutionResolver institutionResolver;
     private final FraudDetectionService fraudDetectionService;
     private final VerificationRuleEngine verificationRuleEngine;
+    private final ApplicationEventPublisher eventPublisher;
+    private final InstitutionTrustProfileRepository trustProfileRepository;
 
     private static final String MODEL_VERSION = "AI2_v1";
 
@@ -38,7 +43,9 @@ public class DocumentVerificationServiceImpl implements DocumentVerificationServ
                                            FraudSignalRepository fraudSignalRepository,
                                            InstitutionResolver institutionResolver,
                                            FraudDetectionService fraudDetectionService,
-                                           VerificationRuleEngine verificationRuleEngine) {
+                                           VerificationRuleEngine verificationRuleEngine,
+                                           ApplicationEventPublisher eventPublisher,
+                                           InstitutionTrustProfileRepository trustProfileRepository) {
         this.documentRepository = documentRepository;
         this.intelligenceRepository = intelligenceRepository;
         this.ocrRepository = ocrRepository;
@@ -47,6 +54,8 @@ public class DocumentVerificationServiceImpl implements DocumentVerificationServ
         this.institutionResolver = institutionResolver;
         this.fraudDetectionService = fraudDetectionService;
         this.verificationRuleEngine = verificationRuleEngine;
+        this.eventPublisher = eventPublisher;
+        this.trustProfileRepository = trustProfileRepository;
     }
 
     @Override
@@ -103,6 +112,14 @@ public class DocumentVerificationServiceImpl implements DocumentVerificationServ
                     return dvr;
                 });
 
+        int currentTrustScore = 50;
+        if (resolvedInstitution != null) {
+            currentTrustScore = trustProfileRepository.findById(resolvedInstitution.getId())
+                    .map(com.edu.entity.InstitutionTrustProfile::getTrustScore)
+                    .orElse(50);
+        }
+        verificationResult.setInstitutionTrustScoreAtVerification(currentTrustScore);
+
         verificationResult.setConfidenceScore(finalScore);
         verificationResult.setConfidenceLevel(confidenceLevel);
         verificationResult.setRiskLevel(riskLevel);
@@ -130,6 +147,24 @@ public class DocumentVerificationServiceImpl implements DocumentVerificationServ
             doc.setStatus(Document.Status.AI_REVIEW_REQUIRED);
         }
         documentRepository.save(doc);
+
+        // Publish events for trust graph updates
+        if (resolvedInstitution != null) {
+            eventPublisher.publishEvent(new com.edu.dto.events.VerificationEvents.DocumentVerificationCompletedEvent(
+                    doc.getId(),
+                    resolvedInstitution.getId(),
+                    finalScore
+            ));
+
+            for (FraudSignal fs : activeSignals) {
+                eventPublisher.publishEvent(new com.edu.dto.events.VerificationEvents.FraudSignalDetectedEvent(
+                        doc.getId(),
+                        resolvedInstitution.getId(),
+                        fs.getSignalType().name(),
+                        fs.getSeverity().name()
+                ));
+            }
+        }
     }
 
     private void markAsReviewRequired(Document doc) {

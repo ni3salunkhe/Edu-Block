@@ -21,19 +21,25 @@ import com.edu.services.InstitutionService;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import org.springframework.context.ApplicationEventPublisher;
+import com.edu.dto.events.InstitutionEvents.InstitutionAccreditationChangedEvent;
+
 @Service
 public class InstitutionServiceImpl implements InstitutionService {
 
     private final InstitutionRepository institutionRepo;
     private final InstitutionVerificationAuditRepository verificationAuditRepo;
     private final AuditService auditService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public InstitutionServiceImpl(InstitutionRepository institutionRepo,
                                   InstitutionVerificationAuditRepository verificationAuditRepo,
-                                  AuditService auditService) {
+                                  AuditService auditService,
+                                  ApplicationEventPublisher eventPublisher) {
         this.institutionRepo = institutionRepo;
         this.verificationAuditRepo = verificationAuditRepo;
         this.auditService = auditService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -143,6 +149,8 @@ public class InstitutionServiceImpl implements InstitutionService {
         saveVerificationAudit(saved, oldLevel, newLevel, adminId, reason);
         logSystemAudit("VERIFY_INSTITUTION", saved, oldLevel, newLevel, adminId, reason);
 
+        eventPublisher.publishEvent(new InstitutionAccreditationChangedEvent(saved.getId(), newLevel.name()));
+
         return saved;
     }
 
@@ -166,6 +174,8 @@ public class InstitutionServiceImpl implements InstitutionService {
 
         saveVerificationAudit(saved, oldLevel, newLevel, adminId, reason);
         logSystemAudit("ACCREDIT_INSTITUTION", saved, oldLevel, newLevel, adminId, reason);
+
+        eventPublisher.publishEvent(new InstitutionAccreditationChangedEvent(saved.getId(), newLevel.name()));
 
         return saved;
     }

@@ -66,6 +66,9 @@ class InstitutionCredentialServiceImplTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private InstitutionCredentialServiceImpl credentialService;
 
