@@ -45,4 +45,10 @@ public class AdminCopilotController {
     public ResponseEntity<List<ReviewerFeedback>> getFeedback() {
         return ResponseEntity.ok(feedbackRepository.findAll());
     }
+
+    // (D) Drift analytics endpoint — AI-5 backbone
+    @GetMapping("/drift")
+    public ResponseEntity<Map<String, Object>> getDriftAnalytics() {
+        return ResponseEntity.ok(copilotService.getDriftAnalytics());
+    }
 }

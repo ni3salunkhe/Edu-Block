@@ -322,6 +322,14 @@ public class ReviewerCopilotServiceImpl implements ReviewerCopilotService {
         stats.put("averageGenerationLatencyMs", avgLatency);
         stats.put("p95GenerationLatencyMs", p95Latency);
 
+        // (B) Average review time
+        Double avgReviewTime = feedbackRepository.averageReviewTimeSeconds();
+        stats.put("averageReviewTimeSeconds", avgReviewTime != null ? Math.round(avgReviewTime) : 0);
+
+        // (D) Recommendation accuracy: how often verifier agreed with the copilot recommendation
+        // agreementRate is already a proxy for accuracy — surface it explicitly with label
+        stats.put("recommendationAccuracyPercentage", agreementRate);
+
         return stats;
     }
 
@@ -329,5 +337,95 @@ public class ReviewerCopilotServiceImpl implements ReviewerCopilotService {
     @Transactional(readOnly = true)
     public List<ReviewerRecommendation> getRecommendationsHistory(UUID documentId) {
         return recommendationRepository.findByDocumentIdOrderByGenerationNumberDesc(documentId);
+    }
+
+    // ----------------------------------------------------------------
+    // (B) Workload Analytics — progressive timestamp setters
+    // ----------------------------------------------------------------
+
+    @Override
+    @Transactional
+    public ReviewerRecommendation markOpened(UUID documentId) {
+        ReviewerRecommendation rec = getActiveRecommendation(documentId);
+        if (rec != null && rec.getOpenedAt() == null) {
+            rec.setOpenedAt(Instant.now());
+            return recommendationRepository.save(rec);
+        }
+        return rec;
+    }
+
+    @Override
+    @Transactional
+    public ReviewerRecommendation markCompleted(UUID documentId) {
+        ReviewerRecommendation rec = getActiveRecommendation(documentId);
+        if (rec != null && rec.getCompletedAt() == null) {
+            rec.setCompletedAt(Instant.now());
+            return recommendationRepository.save(rec);
+        }
+        return rec;
+    }
+
+    // ----------------------------------------------------------------
+    // (D) Drift Analytics — AI-5 backbone
+    // ----------------------------------------------------------------
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> getDriftAnalytics() {
+        Map<String, Object> drift = new LinkedHashMap<>();
+
+        // Override Rate by Institution
+        List<Object[]> byInst = feedbackRepository.countOverridesByInstitution();
+        List<Map<String, Object>> instList = new ArrayList<>();
+        for (Object[] row : byInst) {
+            UUID institutionId = (UUID) row[0];
+            long total = ((Number) row[1]).longValue();
+            long overrideCount = ((Number) row[2]).longValue();
+            double overrideRate = total > 0 ? (overrideCount * 100.0 / total) : 0.0;
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("institutionId", institutionId);
+            entry.put("totalFeedback", total);
+            entry.put("overrideCount", overrideCount);
+            entry.put("overrideRatePercentage", Math.round(overrideRate * 100.0) / 100.0);
+            entry.put("driftWarning", overrideRate > 15.0 && total >= 5);
+            instList.add(entry);
+        }
+        drift.put("overrideRateByInstitution", instList);
+
+        // Override Rate by Fraud Type
+        List<Object[]> byFraud = feedbackRepository.countOverridesByFraudType();
+        List<Map<String, Object>> fraudList = new ArrayList<>();
+        for (Object[] row : byFraud) {
+            String signalType = row[0].toString();
+            long total = ((Number) row[1]).longValue();
+            long overrideCount = ((Number) row[2]).longValue();
+            double overrideRate = total > 0 ? (overrideCount * 100.0 / total) : 0.0;
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("signalType", signalType);
+            entry.put("totalFeedback", total);
+            entry.put("overrideCount", overrideCount);
+            entry.put("overrideRatePercentage", Math.round(overrideRate * 100.0) / 100.0);
+            fraudList.add(entry);
+        }
+        drift.put("overrideRateByFraudType", fraudList);
+
+        // Override Rate by Verifier
+        List<Object[]> byVerifier = feedbackRepository.countOverridesByVerifier();
+        List<Map<String, Object>> verifierList = new ArrayList<>();
+        for (Object[] row : byVerifier) {
+            UUID verifierId = (UUID) row[0];
+            long total = ((Number) row[1]).longValue();
+            long overrideCount = ((Number) row[2]).longValue();
+            double overrideRate = total > 0 ? (overrideCount * 100.0 / total) : 0.0;
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("verifierId", verifierId);
+            entry.put("totalFeedback", total);
+            entry.put("overrideCount", overrideCount);
+            entry.put("overrideRatePercentage", Math.round(overrideRate * 100.0) / 100.0);
+            verifierList.add(entry);
+        }
+        drift.put("overrideRateByVerifier", verifierList);
+
+        return drift;
     }
 }

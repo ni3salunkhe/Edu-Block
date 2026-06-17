@@ -7,10 +7,11 @@ import java.util.UUID;
 public class EvidenceSnapshotDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    private String snapshotVersion; // "SNAPSHOT_V1" - to track evolving schemas
+    private String snapshotVersion; // "SNAPSHOT_V2" - to track evolving schemas
     private String ocrTextHash;
     private double ocrWordConfidence;
     private UUID resolvedInstitutionId;
+    private UUID institutionTrustProfileId; // (C) Traceable reference to exact trust profile row used
     private String institutionName;
     private int institutionTrustScore;
     private String institutionTrustTier;
@@ -53,6 +54,14 @@ public class EvidenceSnapshotDTO implements Serializable {
 
     public void setResolvedInstitutionId(UUID resolvedInstitutionId) {
         this.resolvedInstitutionId = resolvedInstitutionId;
+    }
+
+    public UUID getInstitutionTrustProfileId() {
+        return institutionTrustProfileId;
+    }
+
+    public void setInstitutionTrustProfileId(UUID institutionTrustProfileId) {
+        this.institutionTrustProfileId = institutionTrustProfileId;
     }
 
     public String getInstitutionName() {

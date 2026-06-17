@@ -72,6 +72,16 @@ public class ReviewerRecommendation {
     @Column(name = "generation_latency_ms")
     private Long generationLatencyMs; // Performance tracking metrics
 
+    // Workload Analytics (B) — populated progressively, not at generation time
+    @Column(name = "assigned_at")
+    private Instant assignedAt; // When the document entered a verifier's queue
+
+    @Column(name = "opened_at")
+    private Instant openedAt; // When the verifier first viewed the recommendation
+
+    @Column(name = "completed_at")
+    private Instant completedAt; // When the verifier submitted their feedback decision
+
     public enum RecommendationState {
         ACTIVE,
         EXPIRED,
@@ -219,5 +229,29 @@ public class ReviewerRecommendation {
 
     public void setGenerationLatencyMs(Long generationLatencyMs) {
         this.generationLatencyMs = generationLatencyMs;
+    }
+
+    public Instant getAssignedAt() {
+        return assignedAt;
+    }
+
+    public void setAssignedAt(Instant assignedAt) {
+        this.assignedAt = assignedAt;
+    }
+
+    public Instant getOpenedAt() {
+        return openedAt;
+    }
+
+    public void setOpenedAt(Instant openedAt) {
+        this.openedAt = openedAt;
+    }
+
+    public Instant getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(Instant completedAt) {
+        this.completedAt = completedAt;
     }
 }

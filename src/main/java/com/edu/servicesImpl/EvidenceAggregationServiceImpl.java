@@ -55,7 +55,7 @@ public class EvidenceAggregationServiceImpl implements EvidenceAggregationServic
         DocumentOcr ocr = ocrRepository.findById(documentId).orElse(null);
 
         EvidenceSnapshotDTO dto = new EvidenceSnapshotDTO();
-        dto.setSnapshotVersion("SNAPSHOT_V1");
+        dto.setSnapshotVersion("SNAPSHOT_V2");
         dto.setOcrTextHash(dvr != null ? dvr.getOcrTextHash() : null);
 
         // Extract word confidence via Regex from OCR metadata
@@ -86,6 +86,8 @@ public class EvidenceAggregationServiceImpl implements EvidenceAggregationServic
                 dto.setInstitutionName(trustProfile.getInstitution().getName());
                 dto.setInstitutionTrustScore(trustProfile.getTrustScore());
                 dto.setInstitutionTrustTier(trustProfile.getTrustTier().name());
+                // (C) Persist exact trust profile row reference for full traceability
+                dto.setInstitutionTrustProfileId(instId);
             } else {
                 dto.setInstitutionName("Unknown Institution");
                 dto.setInstitutionTrustScore(50);

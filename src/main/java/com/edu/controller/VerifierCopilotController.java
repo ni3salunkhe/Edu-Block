@@ -33,6 +33,8 @@ public class VerifierCopilotController {
             // Generate it dynamically if it hasn't been pre-generated
             rec = copilotService.generateRecommendation(documentId);
         }
+        // (B) Record first-view timestamp for workload analytics
+        copilotService.markOpened(documentId);
         return ResponseEntity.ok(rec);
     }
 
@@ -66,6 +68,8 @@ public class VerifierCopilotController {
 
         try {
             ReviewerFeedback feedback = copilotService.saveFeedback(rec.getId(), verifierId, actualDecision, comment, overrideReason);
+            // (B) Record completion timestamp for workload analytics
+            copilotService.markCompleted(documentId);
             return ResponseEntity.ok(feedback);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
