@@ -5,6 +5,7 @@ import com.edu.dto.events.InstitutionEvents.InstitutionAccreditationChangedEvent
 import com.edu.dto.events.VerificationEvents.DocumentVerificationCompletedEvent;
 import com.edu.dto.events.VerificationEvents.FraudSignalDetectedEvent;
 import com.edu.services.InstitutionTrustService;
+import com.edu.services.ReviewerCopilotService;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -13,9 +14,11 @@ import org.springframework.stereotype.Component;
 public class TrustGraphEventListener {
 
     private final InstitutionTrustService trustService;
+    private final ReviewerCopilotService reviewerCopilotService;
 
-    public TrustGraphEventListener(InstitutionTrustService trustService) {
+    public TrustGraphEventListener(InstitutionTrustService trustService, ReviewerCopilotService reviewerCopilotService) {
         this.trustService = trustService;
+        this.reviewerCopilotService = reviewerCopilotService;
     }
 
     @Async
@@ -23,6 +26,9 @@ public class TrustGraphEventListener {
     public void handleVerificationCompleted(DocumentVerificationCompletedEvent event) {
         if (event.getInstitutionId() != null) {
             trustService.handleVerificationSuccess(event.getInstitutionId(), event.getConfidenceScore());
+        }
+        if (event.getDocumentId() != null) {
+            reviewerCopilotService.generateRecommendation(event.getDocumentId());
         }
     }
 
