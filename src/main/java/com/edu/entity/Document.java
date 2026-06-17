@@ -66,6 +66,7 @@ public class Document {
         UPLOADED,
         AI_FLAGGED,
         AI_VERIFIED,
+        AI_REVIEW_REQUIRED,
         APPROVED,
         REJECTED,
         BLOCKCHAIN_ANCHORED

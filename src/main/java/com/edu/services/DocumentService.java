@@ -10,7 +10,7 @@ import com.edu.entity.Document;
 
 
 public interface DocumentService {
-	public void upload(MultipartFile file, String type);
+	public Document upload(MultipartFile file, String type);
 	List<Document> getPendingForVerification();
 	void approve(UUID documentId);
 	void rejectWithComment(UUID documentId, String comment);

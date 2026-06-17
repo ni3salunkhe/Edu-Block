@@ -81,7 +81,7 @@ public class DocumentServiceImpl implements DocumentService {
     }
 	
 	@Override
-	public void upload(MultipartFile file, String documentType) {
+	public Document upload(MultipartFile file, String documentType) {
 
 	    try {
 	        byte[] bytes = file.getBytes();
@@ -91,42 +91,24 @@ public class DocumentServiceImpl implements DocumentService {
 
 	        if (documentRepo.existsBySha256Hash(sha256)) {
 	            throw new RuntimeException("Exact duplicate document");
-	            
 	        }
 	        
 	        // 2. Upload to Cloudinary
             String secureUrl = storageService.upload(file);
 
-	        // 3. AI analysis (Needs local file? Yes. Create temp file)
-            // AI Service expects a File object.
-            Path tempFile = Files.createTempFile("edublock-upload", ".pdf");
-            Files.write(tempFile, bytes);
-            
-	        AIResult result = aiService.analyze(tempFile.toFile());
-            Files.deleteIfExists(tempFile); // Cleanup
-
-	        SimilarityMatch match = similarityService.findSimilar(
-	                result.getPerceptualHash()
-	        );
-
 	        Document doc = new Document();
 	        doc.setSha256Hash(sha256);
-	        doc.setPerceptualHash(result.getPerceptualHash());
 	        doc.setFilePath(secureUrl); // Store URL instead of local path
+	        doc.setDocumentType(documentType);
+	        doc.setSource(com.edu.entity.DocumentSource.INDIVIDUAL_UPLOAD);
+	        doc.setStatus(Document.Status.UPLOADED);
             
 	        UUID userId = SecurityUtil.getCurrentUserId();
 	        doc.setOwnerId(userId);
 
 	        doc.setCreatedAt(Instant.now());
 
-	        if (match != null) {
-	            doc.setStatus(Document.Status.AI_FLAGGED);
-	            doc.setMatchedDocumentId(match.getDocumentId());
-	        } else {
-	            doc.setStatus(Document.Status.AI_VERIFIED);
-	        }
-
-	        documentRepo.save(doc);
+	        return documentRepo.save(doc);
 
 	    } catch (IOException e) {
 	        throw new RuntimeException("Document upload failed", e);

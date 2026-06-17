@@ -27,12 +27,23 @@ import com.edu.util.SecurityUtil;
 public class DocumentController {
 
 	@Autowired
-	DocumentService documentService;
+	private DocumentService documentService;
+
+	@Autowired
+	private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
 	@PostMapping("/upload")
 	public ResponseEntity<?> upload(@RequestParam MultipartFile file,
 	                                @RequestParam String documentType) {
-	    documentService.upload(file, documentType);
-	    return ResponseEntity.ok("Uploaded");
+	    Document doc = documentService.upload(file, documentType);
+	    eventPublisher.publishEvent(new com.edu.dto.events.DocumentEvents.DocumentUploadedEvent(doc.getId()));
+	    
+	    return ResponseEntity.status(org.springframework.http.HttpStatus.ACCEPTED)
+	        .body(java.util.Map.of(
+	            "documentId", doc.getId(),
+	            "status", "UPLOADED",
+	            "message", "Document uploaded successfully and queued for processing."
+	        ));
 	}
 
 	@GetMapping("/{id}")

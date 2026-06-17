@@ -10,12 +10,15 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "institutions")
+@Table(name = "institutions", indexes = {
+    @Index(name = "idx_inst_normalized_name", columnList = "normalizedName")
+})
 public class Institution {
 
     @Id
@@ -24,6 +27,9 @@ public class Institution {
 
     @Column(nullable = false)
     private String name;
+
+    @Column(nullable = false)
+    private String normalizedName;
 
     @Column(unique = true, nullable = false)
     private String code;
@@ -51,15 +57,29 @@ public class Institution {
     @Column(nullable = false)
     private Instant updatedAt;
 
+    private String normalizeName(String value) {
+        if (value == null) return "";
+        return value.toLowerCase()
+            .replaceAll("\\b(the|of|and|for|in)\\b", "")
+            .replaceAll("[^a-z0-9]", "")
+            .trim();
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = Instant.now();
         updatedAt = Instant.now();
+        if (this.normalizedName == null && this.name != null) {
+            this.normalizedName = normalizeName(this.name);
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = Instant.now();
+        if (this.name != null) {
+            this.normalizedName = normalizeName(this.name);
+        }
     }
 
     // Getters and Setters
@@ -77,6 +97,15 @@ public class Institution {
 
     public void setName(String name) {
         this.name = name;
+        this.normalizedName = normalizeName(name);
+    }
+
+    public String getNormalizedName() {
+        return normalizedName;
+    }
+
+    public void setNormalizedName(String normalizedName) {
+        this.normalizedName = normalizedName;
     }
 
     public String getCode() {
@@ -166,6 +195,7 @@ public class Institution {
         Institution that = (Institution) o;
         return Objects.equals(id, that.id) &&
                Objects.equals(name, that.name) &&
+               Objects.equals(normalizedName, that.normalizedName) &&
                Objects.equals(code, that.code) &&
                Objects.equals(website, that.website) &&
                Objects.equals(officialEmail, that.officialEmail) &&
@@ -180,7 +210,7 @@ public class Institution {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, code, website, officialEmail, city, state, country, trustLevel, status, createdAt, updatedAt);
+        return Objects.hash(id, name, normalizedName, code, website, officialEmail, city, state, country, trustLevel, status, createdAt, updatedAt);
     }
 
     @Override
