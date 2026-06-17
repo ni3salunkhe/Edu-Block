@@ -40,4 +40,10 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
 
     List<Document> findByIssuingInstitutionId(UUID issuingInstitutionId);
     List<Document> findByOwnerIdIn(java.util.Collection<UUID> ownerIds);
+
+    @Query("""
+        SELECT d.id FROM Document d
+        WHERE d.id NOT IN (SELECT dvr.documentId FROM DocumentVerificationResult dvr)
+    """)
+    List<UUID> findDocIdsWithoutVerification(org.springframework.data.domain.Pageable pageable);
 }
