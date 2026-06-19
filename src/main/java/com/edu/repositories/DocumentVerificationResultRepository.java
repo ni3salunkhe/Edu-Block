@@ -21,4 +21,6 @@ public interface DocumentVerificationResultRepository extends JpaRepository<Docu
     long countByIsVerifiedTrue();
     
     long countByIsVerifiedFalse();
+
+    List<DocumentVerificationResult> findByOcrTextHash(String ocrTextHash);
 }

@@ -11,6 +11,9 @@ import java.util.UUID;
 @Repository
 public interface InstitutionTrustProfileRepository extends JpaRepository<InstitutionTrustProfile, UUID> {
 
+    @Query("SELECT p FROM InstitutionTrustProfile p JOIN FETCH p.institution")
+    java.util.List<InstitutionTrustProfile> findAllWithInstitution();
+
     @Query("""
         SELECT 
             COUNT(d.id) as totalIssued,

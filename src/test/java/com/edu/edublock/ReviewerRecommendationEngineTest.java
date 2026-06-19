@@ -43,6 +43,7 @@ public class ReviewerRecommendationEngineTest {
         riskEventRepository = Mockito.mock(InstitutionRiskEventRepository.class);
         evidenceAggregationService = Mockito.mock(EvidenceAggregationService.class);
         explanationBuilder = Mockito.mock(RecommendationExplanationBuilder.class);
+        org.springframework.context.ApplicationEventPublisher eventPublisher = Mockito.mock(org.springframework.context.ApplicationEventPublisher.class);
 
         copilotService = new ReviewerCopilotServiceImpl(
                 recommendationRepository,
@@ -52,7 +53,8 @@ public class ReviewerRecommendationEngineTest {
                 trustProfileRepository,
                 riskEventRepository,
                 evidenceAggregationService,
-                explanationBuilder
+                explanationBuilder,
+                eventPublisher
         );
     }
 

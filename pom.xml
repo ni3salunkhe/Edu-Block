@@ -123,6 +123,11 @@
     <artifactId>cloudinary-http44</artifactId>
     <version>1.36.0</version>
 </dependency>
+		<dependency>
+			<groupId>org.jgrapht</groupId>
+			<artifactId>jgrapht-core</artifactId>
+			<version>1.5.2</version>
+		</dependency>
 	</dependencies>
 
 	<build>

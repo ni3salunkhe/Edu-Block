@@ -46,4 +46,8 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
         WHERE d.id NOT IN (SELECT dvr.documentId FROM DocumentVerificationResult dvr)
     """)
     List<UUID> findDocIdsWithoutVerification(org.springframework.data.domain.Pageable pageable);
+
+    List<Document> findByPerceptualHash(String perceptualHash);
+    
+    List<Document> findByCredentialReference(String credentialReference);
 }

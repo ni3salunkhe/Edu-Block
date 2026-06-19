@@ -4,9 +4,11 @@ import com.edu.dto.EvidenceSnapshotDTO;
 import com.edu.dto.RecommendationScoreBreakdownDTO;
 import com.edu.entity.*;
 import com.edu.repositories.*;
+import com.edu.dto.events.ReviewerFeedbackSubmittedEvent;
 import com.edu.services.EvidenceAggregationService;
 import com.edu.services.RecommendationExplanationBuilder;
 import com.edu.services.ReviewerCopilotService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class ReviewerCopilotServiceImpl implements ReviewerCopilotService {
     private final InstitutionRiskEventRepository riskEventRepository;
     private final EvidenceAggregationService evidenceAggregationService;
     private final RecommendationExplanationBuilder explanationBuilder;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ReviewerCopilotServiceImpl(ReviewerRecommendationRepository recommendationRepository,
                                      ReviewerFeedbackRepository feedbackRepository,
@@ -35,7 +38,8 @@ public class ReviewerCopilotServiceImpl implements ReviewerCopilotService {
                                      InstitutionTrustProfileRepository trustProfileRepository,
                                      InstitutionRiskEventRepository riskEventRepository,
                                      EvidenceAggregationService evidenceAggregationService,
-                                     RecommendationExplanationBuilder explanationBuilder) {
+                                     RecommendationExplanationBuilder explanationBuilder,
+                                     ApplicationEventPublisher eventPublisher) {
         this.recommendationRepository = recommendationRepository;
         this.feedbackRepository = feedbackRepository;
         this.documentRepository = documentRepository;
@@ -44,6 +48,7 @@ public class ReviewerCopilotServiceImpl implements ReviewerCopilotService {
         this.riskEventRepository = riskEventRepository;
         this.evidenceAggregationService = evidenceAggregationService;
         this.explanationBuilder = explanationBuilder;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -268,7 +273,9 @@ public class ReviewerCopilotServiceImpl implements ReviewerCopilotService {
         }
         feedback.setCreatedAt(Instant.now());
 
-        return feedbackRepository.save(feedback);
+        ReviewerFeedback saved = feedbackRepository.save(feedback);
+        eventPublisher.publishEvent(new ReviewerFeedbackSubmittedEvent(saved.getId(), saved.getRecommendationId()));
+        return saved;
     }
 
     @Override
