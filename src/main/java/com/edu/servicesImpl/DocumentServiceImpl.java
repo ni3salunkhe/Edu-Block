@@ -205,8 +205,11 @@ public class DocumentServiceImpl implements DocumentService {
 	        e.printStackTrace();
 	    }
 	}
+    @Autowired
+    private jakarta.persistence.EntityManager entityManager;
 
 	@Override
+    @Transactional
 	public void acknowledgeRejection(UUID id) {
 	    // Called by the document owner to permanently remove the rejected record
 	    Document doc = documentRepo.findById(id).orElseThrow(() -> new RuntimeException("Document not found"));
@@ -218,6 +221,19 @@ public class DocumentServiceImpl implements DocumentService {
 	    if (!doc.getOwnerId().equals(currentUser)) {
 	        throw new org.springframework.security.access.AccessDeniedException("Not your document");
 	    }
+        
+        // Manually delete dependent records to avoid FK constraint violations
+        entityManager.createQuery("DELETE FROM ReviewerFeedback f WHERE f.recommendationId IN (SELECT r.id FROM ReviewerRecommendation r WHERE r.documentId = :id)").setParameter("id", id).executeUpdate();
+        entityManager.createQuery("DELETE FROM RecommendationEscalation e WHERE e.recommendationId IN (SELECT r.id FROM ReviewerRecommendation r WHERE r.documentId = :id)").setParameter("id", id).executeUpdate();
+        entityManager.createQuery("DELETE FROM ReviewerRecommendation r WHERE r.documentId = :id").setParameter("id", id).executeUpdate();
+        entityManager.createQuery("DELETE FROM ReviewerLearningSignal r WHERE r.documentId = :id").setParameter("id", id).executeUpdate();
+        entityManager.createQuery("DELETE FROM FraudSignal f WHERE f.document.id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createQuery("DELETE FROM IntelligenceEvidence i WHERE i.sourceId = :id AND i.sourceType = 'DOCUMENT'").setParameter("id", id).executeUpdate();
+        entityManager.createQuery("DELETE FROM DocumentVerificationResult d WHERE d.document.id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createQuery("DELETE FROM DocumentIntelligence d WHERE d.document.id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createQuery("DELETE FROM DocumentOcr d WHERE d.document.id = :id").setParameter("id", id).executeUpdate();
+        entityManager.createQuery("DELETE FROM DocumentHash d WHERE d.document.id = :id").setParameter("id", id).executeUpdate();
+
 	    documentRepo.deleteById(id);
 	}
 
